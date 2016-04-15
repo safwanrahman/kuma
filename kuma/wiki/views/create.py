@@ -30,6 +30,15 @@ def create(request):
     # Try to head off disallowed Template:* creation, right off the bat
     if not Document.objects.allows_add_by(request.user, initial_slug):
         raise PermissionDenied
+    # TODO: Integrate this into a new exception-handling middleware
+    if not request.user.has_perm('wiki.add_document'):
+        context = {
+            'reason': 'create-page',
+            'request_page_url': 'https://bugzilla.mozilla.org/form.doc',
+            'request_access_url': 'mailto:mdn-admins@mozilla.org',
+        }
+        return render(request, '403-create-page.html', context=context,
+                      status=403)
 
     # if the initial slug indicates the creation of a new template
     is_template = initial_slug.startswith(TEMPLATE_TITLE_PREFIX)
