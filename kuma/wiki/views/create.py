@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import newrelic.agent
 
+from constance import config
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect
 
@@ -8,7 +9,8 @@ from kuma.attachments.forms import AttachmentRevisionForm
 from kuma.core.decorators import never_cache, login_required, block_user_agents
 from kuma.core.urlresolvers import reverse
 
-from ..constants import (TEMPLATE_TITLE_PREFIX,
+from ..constants import (DEV_DOC_REQUEST_FORM,
+                         TEMPLATE_TITLE_PREFIX,
                          REVIEW_FLAG_TAGS_DEFAULT)
 from ..decorators import check_readonly, prevent_indexing
 from ..forms import DocumentForm, RevisionForm
@@ -32,10 +34,18 @@ def create(request):
         raise PermissionDenied
     # TODO: Integrate this into a new exception-handling middleware
     if not request.user.has_perm('wiki.add_document'):
+        email_url = (
+            'mailto:%s?'
+            'subject=Page Creation permission&'
+            'body=My username is %s.'
+            ' I want the page creation permission on %s because...'
+        ) % (config.EMAIL_LIST_MDN_ADMINS,
+             request.user.username,
+             request.get_host())
         context = {
             'reason': 'create-page',
-            'request_page_url': 'https://bugzilla.mozilla.org/form.doc',
-            'request_access_url': 'mailto:mdn-admins@mozilla.org',
+            'request_page_url': DEV_DOC_REQUEST_FORM,
+            'request_access_url': email_url
         }
         return render(request, '403-create-page.html', context=context,
                       status=403)
