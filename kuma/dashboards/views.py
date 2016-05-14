@@ -4,14 +4,17 @@ import json
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import permission_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.http import is_safe_url
 from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_exempt
+
 import waffle
 
 from kuma.core.utils import paginate
+from kuma.core.utils import datetimeformat
 from kuma.wiki.models import Document, Revision, RevisionAkismetSubmission
 
 from .forms import RevisionDashboardForm
@@ -134,17 +137,33 @@ def topic_lookup(request):
                         content_type='application/json; charset=utf-8')
 
 
+@csrf_exempt
 @require_POST
 @permission_required('wiki.add_revisionakismetsubmission')
 def submit_akismet_spam(request):
     """Creates SPAM or HAM Akismet record for revision"""
-    url = request.POST.get('next')
-    if url is None or not is_safe_url(url, request.get_host()):
-        url = reverse('dashboards.revisions')
-    revision = request.POST.get('revision', 0)
-    revision = Revision.objects.get(pk=revision)
-    submission_type = request.POST.get('submit', 'spam')
-    RevisionAkismetSubmission.objects.create(
-        sender=request.user, revision=revision, type=submission_type)
 
-    return redirect(url)
+    try:
+        revision_id = int(request.POST.get('revision'))
+    except (ValueError, TypeError) as e:
+        return HttpResponseBadRequest()
+
+    revision = Revision.objects.filter(id=revision_id)
+    submission_type = request.POST.get('type')
+
+    if revision.exists() and submission_type in ['spam', 'ham']:
+        RevisionAkismetSubmission.objects.create(
+            sender=request.user, revision_id=revision_id, type=submission_type)
+        akismet_revision = RevisionAkismetSubmission.objects.filter(revision_id=revision_id
+                                                   ).values('sender__username', 'sent', 'type')
+
+        data = [{"sender":obj["sender__username"],
+                          "sent": datetimeformat(value=obj["sent"],
+                                                 format='datetime', request=request),
+                          "type": obj["type"]}
+                     for obj in akismet_revision]
+
+        return HttpResponse(json.dumps(data),
+                            content_type='application/json; charset=utf-8', status=201)
+
+    return HttpResponseBadRequest()
