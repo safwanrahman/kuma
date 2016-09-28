@@ -42,14 +42,9 @@ Docker setup
 
         cd kuma
 
-#. Pull the Docker images and build the containers::
+#. Pull the Docker images, build and start the containers in the background::
 
-        docker-compose pull
-        docker-compose build
-
-#. Start the containers in the background::
-
-        docker-compose up -d
+        docker-compose up --build -d
 
 The following instructions assume that you are running from a folder named
 ``kuma``, so that the containers created are named ``kuma_web_1``,
