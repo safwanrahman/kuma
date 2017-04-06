@@ -165,11 +165,14 @@ compose-test:
 	docker-compose -f docker-compose.yml -f docker-compose.test.yml stop
 
 stylelint:
-	docker-compose -f docker-compose.stylelint.yml run stylelint
-	docker-compose -f docker-compose.stylelint.yml stop
+	docker run -v $(shell pwd):/app -w /app ${BASE_IMAGE_LATEST} \
+	    make stylelint-direct
+
+stylelint-direct:
+	stylelint "kuma/static/styles/**/*.scss"
 
 create-demo:
 	@ ./Jenkinsfiles/create_demo_instance.sh
 
 # Those tasks don't have file targets
-.PHONY: test coveragetest locust clean locale install compilejsi18n collectstatic localetest localeextract localecompile localerefresh
+.PHONY: test coveragetest locust clean locale install compilejsi18n collectstatic localetest localeextract localecompile localerefresh stylelint stylelint-direct
