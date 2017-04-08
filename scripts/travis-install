@@ -32,3 +32,8 @@ then
     chmod +x docker-compose
     sudo mv docker-compose /usr/local/bin
 fi
+
+if [ "$TOXENV" == "stylelint"]
+then
+    sudo npm install -g
+fi
