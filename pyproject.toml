@@ -64,7 +64,6 @@ python-decouple = "^3.3"
 python-magic = "0.4.15"
 pytidylib = "0.3.2"
 pytz = "^2019.3"
-raven = "6.10.0"
 redo = "^2.0.3"
 requests = "^2.22.0"
 stripe = "^2.42.0"
@@ -72,6 +71,7 @@ urllib3 = "^1.25.7"
 urlobject = "^2.4.3"
 urlwait = "^1.0"
 whitenoise = "^5.0.1"
+sentry-sdk = "^0.14.2"
 
 [tool.poetry.dev-dependencies]
 # Development Tools

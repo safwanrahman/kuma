@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit, urlunsplit
 
 import dj_database_url
 import dj_email_url
+import sentry_sdk
 from decouple import config, Csv
 
 _Language = namedtuple("Language", "english native")
@@ -1671,19 +1672,13 @@ BLOCKABLE_USER_AGENTS = [
 SENTRY_DSN = config("SENTRY_DSN", default=None)
 
 if SENTRY_DSN:
-    from raven.transport.requests import RequestsHTTPTransport
+    SENTRY_RELEASE = None
 
-    RAVEN_CONFIG = {
-        "dsn": SENTRY_DSN,
-        "transport": RequestsHTTPTransport,  # Sync transport
-        "ignore_exception": ["django.core.exceptions.DisallowedHost"],
-    }
     if REVISION_HASH and REVISION_HASH != "undefined":
-        RAVEN_CONFIG["release"] = REVISION_HASH
-    # Loaded from environment for CSP reporting endpoint
-    if SENTRY_ENVIRONMENT:
-        RAVEN_CONFIG["environment"] = SENTRY_ENVIRONMENT
-    INSTALLED_APPS = INSTALLED_APPS + ("raven.contrib.django.raven_compat",)
+        SENTRY_RELEASE = REVISION_HASH
+
+    sentry_sdk.init(release=SENTRY_RELEASE)
+
 
 # Tell django-taggit to use case-insensitive search for existing tags
 TAGGIT_CASE_INSENSITIVE = True
